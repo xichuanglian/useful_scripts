@@ -28,7 +28,7 @@ void server()
     struct timeval tv;
     uint64_t t_usec;
 
-    if ((skt = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((skt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
         perror("Failed to create socket.\n");
         return;
     }
@@ -47,12 +47,13 @@ void server()
         recvlen = recvfrom(skt, buf, BUF_SIZE, 0, (struct sockaddr*)&remaddr, &addrlen);
         gettimeofday(&tv, NULL);
         t_usec = 1e6 * tv.tv_sec + tv.tv_usec;
-        sendto(skt, (void*)&t_usec, sizeof(t_usec), 0, (struct sockaddr*)&remaddr, addrlen);
+        memcpy(buf, &t_usec, sizeof(t_usec));
+        sendto(skt, buf, sizeof(t_usec), 0, (struct sockaddr*)&remaddr, addrlen);
         ip = ntohl(remaddr.sin_addr.s_addr);
         printf("%d.%d.%d.%d - %ld\n",
                (ip >> 24) & 0xff,
                (ip >> 16) & 0xff,
-               (ip >> 8) & 0xff,
+               (ip >>  8) & 0xff,
                ip & 0xff, t_usec);
     }
 }
@@ -77,7 +78,7 @@ int calc_diff(uint32_t addr, char* ip)
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = htonl(addr);
 
-    if ((skt = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    if ((skt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
         perror("Failed to create socket.\n");
         return 0;
     }
@@ -107,6 +108,7 @@ int calc_diff(uint32_t addr, char* ip)
                     gettimeofday(&tv, NULL);
                     ed = tv.tv_sec * 1e6 + tv.tv_usec;
                     memcpy(&rply, buf, sizeof(rply));
+                    failed = 0;
                 }
             }
         }
@@ -163,9 +165,9 @@ int main(int argc, char** argv)
         goto exit;
     }
 
-    if (strcmp("-s", argv[1])) {
+    if (strcmp("-s", argv[1]) == 0) {
         server();
-    } else if (strcmp("-c", argv[1])) {
+    } else if (strcmp("-c", argv[1]) == 0) {
         if (argc < 3) {
             usage();
             goto exit;
