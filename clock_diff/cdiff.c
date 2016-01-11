@@ -50,7 +50,7 @@ void server()
         memcpy(buf, &t_usec, sizeof(t_usec));
         sendto(skt, buf, sizeof(t_usec), 0, (struct sockaddr*)&remaddr, addrlen);
         ip = ntohl(remaddr.sin_addr.s_addr);
-        printf("%d.%d.%d.%d - %ld\n",
+        printf("%d.%d.%d.%d - %ldus\n",
                (ip >> 24) & 0xff,
                (ip >> 16) & 0xff,
                (ip >>  8) & 0xff,
